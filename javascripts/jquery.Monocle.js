@@ -11,9 +11,10 @@
  *
  * Version 1.0
  *
- * Roadmap
+ * TODO
  * - zoom relative to mouse position
  * - disable controls when not usable
+ * - simplify formulas
  */
 
 /*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, bitwise:true, strict:true, undef:true, curly:true, browser:true, jquery:true, indent:4, maxerr:50, unused:true, onevar:false, white:false, camelcase:true, regexp:true, trailing:true, latedef:true, newcap:true */
@@ -202,7 +203,8 @@
         },
 
         /*
-         *
+         * Zoom in function
+         * @todo combine
          */
         zoomIn: function() {
             if (this.zoomlevel < this.config.maxZoom) {
@@ -220,7 +222,8 @@
         },
 
         /*
-         *
+         * Zoom out function
+         * @todo combine
          */
         zoomOut: function() {
             if (this.zoomlevel > 0) {
@@ -229,24 +232,27 @@
                 this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
                 this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
 
-                // check for containment
                 var curLeft = parseFloat(this.$elem.css('left')),
                     curTop  = parseFloat(this.$elem.css('top')),
                     toLeft  = parseFloat((this.zoomStep / 2)),
                     toTop   = parseFloat(((this.zoomStep / 2) * this.imgRatio));
 
-                console.log(curLeft);
-                console.log(toLeft);
+                // check for containment
+                if ((this.curWidth - this.viewWidth + (curLeft + toLeft)) < 0) {
+                    toLeft = toLeft + Math.abs((this.curWidth - this.viewWidth + (curLeft + toLeft)));
+                }
 
-                if ((curLeft + toLeft))
+                if ((curLeft + toLeft) > 0) {
+                    toLeft = Math.abs(curLeft);
+                }
 
-                // if ((curLeft + toLeft) > 0) {
-                //     toLeft = Math.abs(curLeft);
-                // }
+                if ((this.curHeight - this.viewHeight + (curTop + toTop)) < 0) {
+                    toTop = toTop + Math.abs((this.curHeight - this.viewHeight + (curTop + toTop)));
+                }
 
-                // if ((curTop + toTop) > 0) {
-                //     toTop = Math.abs(curTop);
-                // }
+                if ((curTop + toTop) > 0) {
+                    toTop = Math.abs(curTop);
+                }
 
                 this.$elem.stop().animate({
                     width: this.curWidth,
