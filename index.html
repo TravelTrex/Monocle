@@ -5,7 +5,6 @@
     <title>Monocle</title>
 
     <script src="javascripts/jquery-1.8.0.min.js"></script>
-    <!--<script src="javascripts/jquery-ui-1.8.23.custom.min.js"></script>-->
     <script src="javascripts/jquery.mousewheel.js"></script>
     <script src="javascripts/jquery.Monocle.js"></script>
 
@@ -21,10 +20,16 @@
 </head>
 <body>
     <div class="monocle">
-        <img src="214742" alt="Monocle image" class="monocle-image">
+        <!-- http://bilder.skigebiete-test.de/skigebiete/515/groeden_pistenplan_l3.jpg -->
+        <img src="214742.jpg" alt="Monocle image" class="monocle-image">
         <div class="monocle-controls">
-            <span class="monocle-zoomin">++</span>
-            <span class="monocle-zoomout">--</span>
+            <span class="monocle-control monocle-move-up" data-direction="up"></span>
+            <span class="monocle-control monocle-move-right" data-direction="right"></span>
+            <span class="monocle-control monocle-move-down" data-direction="down"></span>
+            <span class="monocle-control monocle-move-left" data-direction="left"></span>
+            <span class="monocle-control monocle-zoom-in"></span>
+            <span class="monocle-control monocle-zoom-out"></span>
+            <span class="monocle-control monocle-zoom-fit"></span>
         </div>
     </div>
     <div id="status"></div>

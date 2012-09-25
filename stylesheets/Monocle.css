@@ -32,24 +32,88 @@ body {
 
 .monocle {
     width: 850px;
-    height: 650px;
+    height: 400px;
     margin: 20px auto;
-    background: #bbb;
+    background: #ddd url('loading.gif') no-repeat center center;
     position: relative;
     overflow: hidden;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.4);
 }
 .monocle-controls {
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    background-image: url('controls.png');
+    background-repeat: no-repeat;
+    top: 5px;
+    left: 4px;
     z-index: 1000;
+    width: 48px;
+    height: 102px;
+    position: absolute;
 }
+.monocle-control {
+    background-image: url('controls.png');
+    background-repeat: no-repeat;
+    cursor: pointer;
+    display: block;
+    position: absolute;
+}
+    .monocle-control:focus,
+    .monocle-control:active {
+        margin-top: 1px;
+    }
+    .monocle-move-up,
+    .monocle-move-right,
+    .monocle-move-down,
+    .monocle-move-left {
+        height: 10px;
+        width: 10px;
+    }
+        .monocle-move-up {
+            background-position: -58px 0;
+            left: 14px;
+            top: 9px;
+        }
+        .monocle-move-right {
+            background-position: -67px -9px;
+            left: 23px;
+            top: 18px;
+        }
+        .monocle-move-down {
+            background-position: -58px -18px;
+            left: 14px;
+            top: 27px;
+        }
+        .monocle-move-left {
+            background-position: -49px -9px;
+            left: 5px;
+            top: 18px;
+        }
+    .monocle-zoom-in,
+    .monocle-zoom-out,
+    .monocle-zoom-fit {
+        height: 16px;
+        width: 16px;
+        left: 5px;
+    }
+        .monocle-zoom-in {
+            background-position: -49px -33px;
+            top: 42px;
+        }
+        .monocle-zoom-out {
+            background-position: -49px -51px;
+            top: 60px;
+        }
+        .monocle-zoom-fit {
+            background-position: -49px -69px;
+            height: 17px;
+            top: 78px;
+        }
+
 .monocle-image {
     cursor: move;
     position: relative;
     top: 0;
     left: 0;
-    image-rendering: -moz-crisp-edges;
+    opacity: 0;
 }
 .monocle-draggable {
     z-index: 999;
