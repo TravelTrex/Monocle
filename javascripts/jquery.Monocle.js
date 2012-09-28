@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2012 TravelTrex GmbH
  *
- * Licensed under the MIT License (LICENSE.txt).
+ * Licensed under the LGPL License (LICENSE.txt).
  *
  * Thanks to the jQuery team for their awesome JavaScript library. 
  * Thanks to Brandon Aaron (http://brandonaaron.net) for his jQuery Mousewheel plugin.
@@ -49,6 +49,7 @@
             this.config = $.extend({}, this.defaults, this.options);
 
             this.zoomlevel  = 0;
+            this.zoomLock   = false;
 
             // VARIABLES
 
@@ -78,12 +79,14 @@
             // GO GO GO!
             this.$elem.animate({
                 opacity: 1
-            }, 200);
+            }, 1000);
 
             // BINDINGS
 
             // drag and drop magic
             this.$elem.on('mousedown', function(event) {
+                event.preventDefault();
+
                 $(this).addClass('monocle-draggable');
 
                 var posX = $(this).offset().left - event.pageX,
@@ -91,8 +94,10 @@
                     toX  = 0,
                     toY  = 0;
 
-                // @todo: parents() or parent()
+                // @todo: parents() or parent() ?
                 $(this).parents().on('mousemove', function(event) {
+                    event.preventDefault();
+
                     toX = event.pageX + posX,
                     toY = event.pageY + posY;
 
@@ -122,7 +127,6 @@
                     });
                 });
 
-                event.preventDefault();
             }).on('mouseup', function() {
                 $(this).removeClass('monocle-draggable');
             });
@@ -130,7 +134,7 @@
             // fix drag and drop bug when leaving the image while mousedown
             $(document).on('mouseup', function() {
                 self.$elem.removeClass('monocle-draggable');
-            })
+            });
 
             // CONTROLS
 
@@ -155,7 +159,7 @@
             $('.monocle-move-up, .monocle-move-right, .monocle-move-down, .monocle-move-left').bind('click', function(event) {
                 event.preventDefault();
 
-                alert('@todo implement: "move ' + $(this).data('direction') + '"')
+                self.goTo($(this).data('direction'));
             });
 
             // use mousewheel for zooming
@@ -177,7 +181,6 @@
 
                 self.zoomIn();
             });
- 
 
             return this;
         },
@@ -195,11 +198,11 @@
             this.viewHeight = this.curHeight;
             this.viewport.height(this.curHeight);
 
-            this.$elem.css({
+            this.$elem.stop().animate({
                 width: this.curWidth,
                 top: 0,
                 left: 0
-            });
+            } , this.config.zoomSpeed);
         },
 
         /*
@@ -207,16 +210,28 @@
          * @todo combine
          */
         zoomIn: function() {
+            var self = this;
+
+            if (this.zoomLock) {
+                return;
+            }
+
             if (this.zoomlevel < this.config.maxZoom) {
+                // set zoomlock
+                this.zoomLock = true;
+                setTimeout(function () {
+                    self.zoomLock = false;
+                }, this.config.zoomSpeed * 1.1);
+
                 this.zoomlevel++;
 
                 this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
                 this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
 
                 this.$elem.stop().animate({
-                    width: this.curWidth,
                     top: "-=" + ((this.zoomStep / 2) * this.imgRatio),
-                    left: "-=" + (this.zoomStep / 2)
+                    left: "-=" + (this.zoomStep / 2),
+                    width: this.curWidth
                 } , this.config.zoomSpeed);
             }
         },
@@ -226,7 +241,19 @@
          * @todo combine
          */
         zoomOut: function() {
+            var self = this;
+
+            if (this.zoomLock) {
+                return;
+            }
+
             if (this.zoomlevel > 0) {
+                // set zoomlock
+                this.zoomLock = true;
+                setTimeout(function () {
+                    self.zoomLock = false;
+                }, this.config.zoomSpeed * 1.1);
+
                 this.zoomlevel--;
 
                 this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
@@ -255,11 +282,62 @@
                 }
 
                 this.$elem.stop().animate({
-                    width: this.curWidth,
                     left: "+=" + toLeft,
-                    top: "+=" + toTop
+                    top: "+=" + toTop,
+                    width: this.curWidth
                 } , this.config.zoomSpeed);
             }
+        },
+
+        /*
+         * Move relative
+         */
+        goTo: function(direction) {
+            var horizontal  = 0,
+                vertical    = 0;
+
+            switch (direction) {
+                case 'up':
+                    vertical = 1;
+                    break;
+                case 'right':
+                    horizontal = -1;
+                    break;
+                case 'down':
+                    vertical = -1;
+                    break;
+                case 'left':
+                    horizontal = 1;
+                    break;
+            }
+
+            var curLeft = parseFloat(this.$elem.css('left')),
+                curTop  = parseFloat(this.$elem.css('top')),
+                toLeft  = horizontal * parseFloat((this.zoomStep / 2)),
+                toTop   = vertical * parseFloat(((this.zoomStep / 2) * this.imgRatio));
+
+            // check for containment
+            if ((this.curWidth - this.viewWidth + (curLeft + toLeft)) < 0) {
+                toLeft = toLeft + Math.abs((this.curWidth - this.viewWidth + (curLeft + toLeft)));
+            }
+
+            if ((curLeft + toLeft) > 0) {
+                toLeft = Math.abs(curLeft);
+            }
+
+            if ((this.curHeight - this.viewHeight + (curTop + toTop)) < 0) {
+                toTop = toTop + Math.abs((this.curHeight - this.viewHeight + (curTop + toTop)));
+            }
+
+            if ((curTop + toTop) > 0) {
+                toTop = Math.abs(curTop);
+            }
+
+            this.$elem.stop().animate({
+                left: "+=" + toLeft,
+                top: "+=" + toTop,
+                width: this.curWidth
+            } , this.config.zoomSpeed);
         }
     };
 
@@ -270,7 +348,9 @@
      */
     $.fn.monocle = function(options) {
         return this.each(function() {
-            new Monocle(this, options).init();
+            $(this).bind('load', function() {
+                new Monocle(this, options).init();
+            });
         });
     };
 
