@@ -46,7 +46,7 @@ body {
     left: 4px;
     z-index: 1000;
     width: 48px;
-    height: 102px;
+    height: 122px;
     position: absolute;
 }
 .monocle-control {
@@ -96,16 +96,16 @@ body {
     }
         .monocle-zoom-in {
             background-position: -49px -33px;
-            top: 42px;
+            top: 52px;
         }
         .monocle-zoom-out {
             background-position: -49px -51px;
-            top: 60px;
+            top: 70px;
         }
         .monocle-zoom-fit {
             background-position: -49px -69px;
             height: 17px;
-            top: 78px;
+            top: 98px;
         }
 
 .monocle-image {
