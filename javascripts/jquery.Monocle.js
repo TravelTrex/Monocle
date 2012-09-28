@@ -79,9 +79,58 @@
             // GO GO GO!
             this.$elem.animate({
                 opacity: 1
-            }, 1000);
+            }, 200);
 
-            // BINDINGS
+
+            // REGISTER BINDINGS
+
+            // CONTROLS
+
+            // zoom controls
+            $('.monocle-zoom-in').bind('click', function(event) {
+                event.preventDefault();
+
+                self.zoom('in');
+            });
+            $('.monocle-zoom-out').bind('click', function(event) {
+                event.preventDefault();
+
+                self.zoom('out');
+            });
+            $('.monocle-zoom-fit').bind('click', function(event) {
+                event.preventDefault();
+
+                self.reset();
+            });
+
+            // movement controls
+            $('.monocle-move-up, .monocle-move-right, .monocle-move-down, .monocle-move-left').bind('click', function(event) {
+                event.preventDefault();
+
+                self.move($(this).data('direction'));
+            });
+
+            // use mousewheel for zooming
+            if ($.fn.mousewheel) {
+                this.$elem.bind('mousewheel', function(event, delta) {
+                    event.preventDefault();
+
+                    if (delta > 0) {
+                        self.zoom('in');
+                    } else {
+                        self.zoom('out');
+                    }
+                });
+            }
+
+            // use double click for zooming in
+            this.$elem.bind('dblclick', function(event) {
+                event.preventDefault();
+
+                self.zoom('in');
+            });
+
+            // EVENTS
 
             // drag and drop magic
             this.$elem.on('mousedown', function(event) {
@@ -136,52 +185,6 @@
                 self.$elem.removeClass('monocle-draggable');
             });
 
-            // CONTROLS
-
-            // zoom controls
-            $('.monocle-zoom-in').bind('click', function(event) {
-                event.preventDefault();
-
-                self.zoomIn();
-            });
-            $('.monocle-zoom-out').bind('click', function(event) {
-                event.preventDefault();
-
-                self.zoomOut();
-            });
-            $('.monocle-zoom-fit').bind('click', function(event) {
-                event.preventDefault();
-
-                self.reset();
-            });
-
-            // movement controls
-            $('.monocle-move-up, .monocle-move-right, .monocle-move-down, .monocle-move-left').bind('click', function(event) {
-                event.preventDefault();
-
-                self.goTo($(this).data('direction'));
-            });
-
-            // use mousewheel for zooming
-            if ($.fn.mousewheel) {
-                this.$elem.bind('mousewheel', function(event, delta) {
-                    event.preventDefault();
-
-                    if (delta > 0) {
-                        self.zoomIn();
-                    } else {
-                        self.zoomOut();
-                    }
-                });
-            }
-
-            // use double click for zooming in
-            this.$elem.bind('dblclick', function(event) {
-                event.preventDefault();
-
-                self.zoomIn();
-            });
-
             return this;
         },
 
@@ -206,93 +209,54 @@
         },
 
         /*
-         * Zoom in function
-         * @todo combine
+         * Zoom function
          */
-        zoomIn: function() {
+        zoom: function(direction) {
             var self = this;
 
+            // check if we really want to zoom
             if (this.zoomLock) {
                 return;
             }
 
-            if (this.zoomlevel < this.config.maxZoom) {
-                // set zoomlock
-                this.zoomLock = true;
-                setTimeout(function () {
-                    self.zoomLock = false;
-                }, this.config.zoomSpeed * 1.1);
-
-                this.zoomlevel++;
-
-                this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
-                this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
-
-                this.$elem.stop().animate({
-                    top: "-=" + ((this.zoomStep / 2) * this.imgRatio),
-                    left: "-=" + (this.zoomStep / 2),
-                    width: this.curWidth
-                } , this.config.zoomSpeed);
-            }
-        },
-
-        /*
-         * Zoom out function
-         * @todo combine
-         */
-        zoomOut: function() {
-            var self = this;
-
-            if (this.zoomLock) {
+            if (direction === 'in' && this.zoomlevel === this.config.maxZoom) {
                 return;
             }
 
-            if (this.zoomlevel > 0) {
-                // set zoomlock
-                this.zoomLock = true;
-                setTimeout(function () {
-                    self.zoomLock = false;
-                }, this.config.zoomSpeed * 1.1);
+            if (direction === 'out' && this.zoomlevel === 0) {
+                return;
+            }
 
-                this.zoomlevel--;
+            // set zoomlock
+            this.zoomLock = true;
+            setTimeout(function () {
+                self.zoomLock = false;
+            }, this.config.zoomSpeed * 1.1);
 
-                this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
-                this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
+            switch (direction) {
+                case 'in':
+                    this.zoomlevel++;
 
-                var curLeft = parseFloat(this.$elem.css('left')),
-                    curTop  = parseFloat(this.$elem.css('top')),
-                    toLeft  = parseFloat((this.zoomStep / 2)),
-                    toTop   = parseFloat(((this.zoomStep / 2) * this.imgRatio));
+                    this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
+                    this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
 
-                // check for containment
-                if ((this.curWidth - this.viewWidth + (curLeft + toLeft)) < 0) {
-                    toLeft = toLeft + Math.abs((this.curWidth - this.viewWidth + (curLeft + toLeft)));
-                }
+                    this.goTo(-1, -1);
+                    break;
+                case 'out':
+                    this.zoomlevel--;
 
-                if ((curLeft + toLeft) > 0) {
-                    toLeft = Math.abs(curLeft);
-                }
+                    this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
+                    this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
 
-                if ((this.curHeight - this.viewHeight + (curTop + toTop)) < 0) {
-                    toTop = toTop + Math.abs((this.curHeight - this.viewHeight + (curTop + toTop)));
-                }
-
-                if ((curTop + toTop) > 0) {
-                    toTop = Math.abs(curTop);
-                }
-
-                this.$elem.stop().animate({
-                    left: "+=" + toLeft,
-                    top: "+=" + toTop,
-                    width: this.curWidth
-                } , this.config.zoomSpeed);
+                    this.goTo(1, 1);
+                    break;
             }
         },
 
         /*
          * Move relative
          */
-        goTo: function(direction) {
+        move: function(direction) {
             var horizontal  = 0,
                 vertical    = 0;
 
@@ -311,6 +275,13 @@
                     break;
             }
 
+            this.goTo(horizontal, vertical);
+        },
+
+        /*
+         * GoTo
+         */
+        goTo: function(horizontal, vertical) {
             var curLeft = parseFloat(this.$elem.css('left')),
                 curTop  = parseFloat(this.$elem.css('top')),
                 toLeft  = horizontal * parseFloat((this.zoomStep / 2)),
