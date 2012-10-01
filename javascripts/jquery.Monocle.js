@@ -1,4 +1,4 @@
-/*
+/**
  * Monocle - A simple image zoom plugin for jQuery
  * Author: @felixtriller
  *
@@ -19,29 +19,29 @@
 
 /*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, bitwise:true, strict:true, undef:true, curly:true, browser:true, jquery:true, indent:4, maxerr:50, unused:true, onevar:false, white:false, camelcase:true, regexp:true, trailing:true, latedef:true, newcap:true */
 
-;(function( $, window, document, undefined ){
+;(function($, window, document, undefined){
     "use strict";
 
-    /*
+    /**
      * Construct
      */
-    var Monocle = function( elem, options ){
+    var Monocle = function(elem, options){
         this.elem = elem;
         this.$elem = $(elem);
         this.options = options;
     };
 
-    /*
+    /**
      * Monocle prototype
      */
     Monocle.prototype = {
         defaults: {
             message: 'Hello world!',
-            zoomSpeed: 0,
-            maxZoom: 6
+            zoomSpeed: 500,
+            maxZoom: 10
         },
 
-        /*
+        /**
          * Init variables, set dimensions, bind functions and events
          */
         init: function() {
@@ -77,9 +77,11 @@
             this.reset();
 
             // GO GO GO!
-            this.$elem.animate({
-                opacity: 1
-            }, 200);
+            this.$elem.removeAttr('alt')    // remove attributes to prevent tool tip in IE
+                      .removeAttr('title')
+                      .animate({
+                        opacity: 1
+                      }, this.config.zoomSpeed);
 
 
             // REGISTER BINDINGS
@@ -180,7 +182,7 @@
                 $(this).removeClass('monocle-draggable');
             });
 
-            // fix drag and drop bug when leaving the image while mousedown
+            // fix drag and drop bug (IE?) when leaving the image while mousedown
             $(document).on('mouseup', function() {
                 self.$elem.removeClass('monocle-draggable');
             });
@@ -188,7 +190,7 @@
             return this;
         },
 
-        /*
+        /**
          * Set image dimensions to Viewport size, reset zoom level,
          * change Viewport height to fit aspect ratio of image
          */
@@ -201,18 +203,19 @@
             this.viewHeight = this.curHeight;
             this.viewport.height(this.curHeight);
 
-            this.$elem.stop().animate({
+            this.$elem.stop(false, true).animate({
                 width: this.curWidth,
                 top: 0,
                 left: 0
             } , this.config.zoomSpeed);
         },
 
-        /*
-         * Zoom function
+        /**
+         * Zoom function, zooms in and out
+         * @param  {string} direction can be in and out
          */
         zoom: function(direction) {
-            var self = this;
+            var directionInt = 0;
 
             // check if we really want to zoom
             if (this.zoomLock) {
@@ -227,34 +230,32 @@
                 return;
             }
 
-            // set zoomlock
-            this.zoomLock = true;
-            setTimeout(function () {
-                self.zoomLock = false;
-            }, this.config.zoomSpeed * 1.1);
+            // set zoomlock, disabled until zoom animate bug is fixed
+            //this.zoomLock = true;
+            //setTimeout(function () {
+            //    self.zoomLock = false;
+            //}, this.config.zoomSpeed * 1.1);
 
             switch (direction) {
                 case 'in':
                     this.zoomlevel++;
-
-                    this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
-                    this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
-
-                    this.goTo(-1, -1);
+                    directionInt = -1;
                     break;
                 case 'out':
                     this.zoomlevel--;
-
-                    this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
-                    this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
-
-                    this.goTo(1, 1);
+                    directionInt = 1;
                     break;
             }
+
+            this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
+            this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
+
+            this.goTo(directionInt, directionInt, true);
         },
 
-        /*
-         * Move relative
+        /**
+         * Helper function for up, right, down, left control
+         * @param  {string} direction can be up, right, down, left
          */
         move: function(direction) {
             var horizontal  = 0,
@@ -275,17 +276,21 @@
                     break;
             }
 
-            this.goTo(horizontal, vertical);
+            this.goTo(horizontal, vertical, false);
         },
 
-        /*
-         * GoTo
+        /**
+         * Move position of image after checking for containment
+         * @param  {int} horizontal direction of horizontal movement, can be 1 and -1
+         * @param  {int} vertical   direction of vertical movement, can be 1 and -1
+         * @param  {bool} isZooming called from zoom function?
          */
-        goTo: function(horizontal, vertical) {
-            var curLeft = parseFloat(this.$elem.css('left')),
-                curTop  = parseFloat(this.$elem.css('top')),
-                toLeft  = horizontal * parseFloat((this.zoomStep / 2)),
-                toTop   = vertical * parseFloat(((this.zoomStep / 2) * this.imgRatio));
+        goTo: function(horizontal, vertical, isZooming) {
+            var curLeft     = parseFloat(this.$elem.css('left')),
+                curTop      = parseFloat(this.$elem.css('top')),
+                toLeft      = horizontal * parseFloat((this.zoomStep / 2)),
+                toTop       = vertical * parseFloat(((this.zoomStep / 2) * this.imgRatio)),
+                zoomSpeed   = this.config.zoomSpeed;
 
             // check for containment
             if ((this.curWidth - this.viewWidth + (curLeft + toLeft)) < 0) {
@@ -304,17 +309,22 @@
                 toTop = Math.abs(curTop);
             }
 
-            this.$elem.stop().animate({
+            // animation disabled (bug)
+            if (isZooming) {
+                zoomSpeed = 0;
+            }
+
+            this.$elem.stop(false, true).animate({
                 left: "+=" + toLeft,
                 top: "+=" + toTop,
                 width: this.curWidth
-            } , this.config.zoomSpeed);
+            }, zoomSpeed);
         }
     };
 
     Monocle.defaults = Monocle.prototype.defaults;
 
-    /*
+    /**
      * Register as jQuery plugin
      */
     $.fn.monocle = function(options) {
@@ -327,4 +337,4 @@
 
     //optional: window.Monocle = Monocle;
 
-})( jQuery, window , document );
+})(jQuery, window , document);
