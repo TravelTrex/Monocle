@@ -26,8 +26,7 @@
      * Construct
      */
     var Monocle = function(elem, options){
-        this.elem = elem;
-        this.$elem = $(elem);
+        this.elem = $(elem);    // this is our image
         this.options = options;
     };
 
@@ -36,9 +35,9 @@
      */
     Monocle.prototype = {
         defaults: {
-            message: 'Hello world!',
-            zoomSpeed: 500,
-            maxZoom: 10
+            maxZoom: 5,
+            responsive: true,
+            animationSpeed: 300
         },
 
         /**
@@ -49,18 +48,18 @@
             this.config = $.extend({}, this.defaults, this.options);
 
             this.zoomlevel  = 0;
-            this.zoomLock   = false;
+            this.lock       = false;
 
             // VARIABLES
 
             // get div containing the image
-            this.viewport   = $( this.$elem ).parent('div');
+            this.viewport   = this.elem.parent('div');
             this.viewportX  = this.viewport.offset().left;
             this.viewportY  = this.viewport.offset().top;
 
             // get dimensions of image and viewport
-            this.imgWidth   = this.$elem.width();
-            this.imgHeight  = this.$elem.height();
+            this.imgWidth   = this.elem.width();
+            this.imgHeight  = this.elem.height();
             this.imgRatio   = this.imgHeight / this.imgWidth;
 
             this.viewWidth  = this.viewport.width();
@@ -77,11 +76,20 @@
             this.reset();
 
             // GO GO GO!
-            this.$elem.removeAttr('alt')    // remove attributes to prevent tool tip in IE
-                      .removeAttr('title')
-                      .animate({
+            this.viewport.css({
+                position: 'relative',
+                overflow: 'hidden'
+            });
+            this.elem.removeAttr('alt')    // remove attributes to prevent tool tip in IE
+                     .removeAttr('title')
+                     .css({
+                        top: 0,
+                        left: 0,
+                        position: 'relative'
+                     })
+                     .animate({
                         opacity: 1
-                      }, this.config.zoomSpeed);
+                     }, this.config.animationSpeed);
 
 
             // REGISTER BINDINGS
@@ -114,7 +122,7 @@
 
             // use mousewheel for zooming
             if ($.fn.mousewheel) {
-                this.$elem.bind('mousewheel', function(event, delta) {
+                this.elem.bind('mousewheel', function(event, delta) {
                     event.preventDefault();
 
                     if (delta > 0) {
@@ -126,7 +134,7 @@
             }
 
             // use double click for zooming in
-            this.$elem.bind('dblclick', function(event) {
+            this.elem.bind('dblclick', function(event) {
                 event.preventDefault();
 
                 self.zoom('in');
@@ -135,7 +143,7 @@
             // EVENTS
 
             // drag and drop magic
-            this.$elem.on('mousedown', function(event) {
+            this.elem.on('mousedown', function(event) {
                 event.preventDefault();
 
                 $(this).addClass('monocle-draggable');
@@ -184,8 +192,17 @@
 
             // fix drag and drop bug (IE?) when leaving the image while mousedown
             $(document).on('mouseup', function() {
-                self.$elem.removeClass('monocle-draggable');
+                self.elem.removeClass('monocle-draggable');
             });
+
+            // reload page on resize (kind of responsive)
+            if (this.config.responsive) {
+                var resizeTimer;
+                $(window).bind('resize', function () {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(document.location.reload(true), 100);
+                });
+            }
 
             return this;
         },
@@ -202,12 +219,13 @@
 
             this.viewHeight = this.curHeight;
             this.viewport.height(this.curHeight);
+            this.viewport.width(this.curWidth);
 
-            this.$elem.stop(false, true).animate({
+            this.elem.stop(false, true).animate({
                 width: this.curWidth,
                 top: 0,
                 left: 0
-            } , this.config.zoomSpeed);
+            } , this.config.animationSpeed);
         },
 
         /**
@@ -216,9 +234,10 @@
          */
         zoom: function(direction) {
             var directionInt = 0;
+                // self = this
 
-            // check if we really want to zoom
-            if (this.zoomLock) {
+            // check for animation lock
+            if (this.lock) {
                 return;
             }
 
@@ -231,10 +250,10 @@
             }
 
             // set zoomlock, disabled until zoom animate bug is fixed
-            //this.zoomLock = true;
+            //this.lock = true;
             //setTimeout(function () {
-            //    self.zoomLock = false;
-            //}, this.config.zoomSpeed * 1.1);
+            //    self.lock = false;
+            //}, this.config.animationSpeed * 1.1);
 
             switch (direction) {
                 case 'in':
@@ -259,7 +278,13 @@
          */
         move: function(direction) {
             var horizontal  = 0,
-                vertical    = 0;
+                vertical    = 0,
+                self        = this;
+
+            // check for animation lock
+            if (this.lock) {
+                return;
+            }
 
             switch (direction) {
                 case 'up':
@@ -276,6 +301,12 @@
                     break;
             }
 
+            // set lock
+            this.lock = true;
+            setTimeout(function () {
+                self.lock = false;
+            }, this.config.animationSpeed * 1.1);
+
             this.goTo(horizontal, vertical, false);
         },
 
@@ -286,11 +317,11 @@
          * @param  {bool} isZooming called from zoom function?
          */
         goTo: function(horizontal, vertical, isZooming) {
-            var curLeft     = parseFloat(this.$elem.css('left')),
-                curTop      = parseFloat(this.$elem.css('top')),
+            var curLeft     = parseFloat(this.elem.css('left')),
+                curTop      = parseFloat(this.elem.css('top')),
                 toLeft      = horizontal * parseFloat((this.zoomStep / 2)),
                 toTop       = vertical * parseFloat(((this.zoomStep / 2) * this.imgRatio)),
-                zoomSpeed   = this.config.zoomSpeed;
+                animationSpeed   = this.config.animationSpeed;
 
             // check for containment
             if ((this.curWidth - this.viewWidth + (curLeft + toLeft)) < 0) {
@@ -311,14 +342,14 @@
 
             // animation disabled (bug)
             if (isZooming) {
-                zoomSpeed = 0;
+                animationSpeed = 0;
             }
 
-            this.$elem.stop(false, true).animate({
+            this.elem.stop(false, true).animate({
                 left: "+=" + toLeft,
                 top: "+=" + toTop,
                 width: this.curWidth
-            }, zoomSpeed);
+            }, animationSpeed);
         }
     };
 
