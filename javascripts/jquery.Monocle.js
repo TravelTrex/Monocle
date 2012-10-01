@@ -215,6 +215,14 @@
             this.curWidth  = this.viewWidth;
             this.curHeight = this.viewWidth * this.imgRatio;
 
+            // @todo cleanup
+            if (this.curHeight > $(window).height()) {
+                this.curHeight  = $(window).height() - this.viewportY * 2;
+                this.curWidth   = this.curHeight / this.imgRatio;
+                this.viewWidth  = this.curWidth;
+                this.zoomStep   = (this.imgWidth - this.viewWidth) / this.config.maxZoom;
+            }
+
             this.zoomlevel  = 0;
 
             this.viewHeight = this.curHeight;
