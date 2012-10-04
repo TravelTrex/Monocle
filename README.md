@@ -11,7 +11,7 @@ Available controls (next to the graphical controls):
 Should work in Google Chrome, Safari, Mozilla Firefox 3.6+, Opera 10+ and Microsoft Internet Explorer 8+.
 
 ## How do I use it?
-Include JavaScripts and thestyle sheet
+Include JavaScripts and the CSS
 
 ```html
 <script src="javascripts/jquery-1.8.0.min.js"></script>
@@ -24,7 +24,8 @@ Include JavaScripts and thestyle sheet
     jQuery(function() {
         jQuery('.monocle-image').monocle();
     });
-</script>```
+</script>
+```
 
 The markup should look like this
 
@@ -40,7 +41,8 @@ The markup should look like this
         <span class="monocle-control monocle-zoom-out"></span>
         <span class="monocle-control monocle-zoom-fit"></span>
     </div>
-</div>```
+</div>
+```
 
 This is a early version of Monocle which needs some cleanup and refactoring.
 
