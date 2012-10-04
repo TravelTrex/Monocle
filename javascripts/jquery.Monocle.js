@@ -37,7 +37,8 @@
         defaults: {
             maxZoom: 5,
             responsive: true,
-            animationSpeed: 300
+            animationSpeed: 300,
+            keyboard: true
         },
 
         /**
@@ -120,6 +121,63 @@
                 self.move($(this).data('direction'));
             });
 
+            // enable keyboard navigation
+            if (this.config.keyboard) {
+                $(document).keydown(function(event){
+                    switch(event.which) {
+                        case 37: // left
+                        case (($.browser.opera) ? 52 : 100): // numblock 4
+                            self.move('left');
+                            break;
+
+                        case 38: // up
+                        case (($.browser.opera) ? 56 : 104): // numblock 8
+                            self.move('up');
+                            break;
+
+                        case 39: // right
+                        case (($.browser.opera) ? 54 : 102): // numblock 6
+                            self.move('right');
+                            break;
+
+                        case 40: // down
+                        case (($.browser.opera) ? 50 : 98):
+                            self.move('down');
+                            break;
+
+                        // +
+                        case 107:
+                        case 171:
+                        case 187:
+                            if ($.browser.opera) {
+                                return;
+                            }
+                            self.zoom('in');
+                            break;
+
+                        // -
+                        case 109:
+                        case 173:
+                        case 189:
+                            if ($.browser.opera) {
+                                return;
+                            }
+                            self.zoom('out');
+                            break;
+
+                        case 45:
+                        case 48 :
+                        case 96:
+                            self.reset();
+                            break;
+
+                        default: return;
+                    }
+
+                    event.preventDefault();
+                });
+            }
+
             // use mousewheel for zooming
             if ($.fn.mousewheel) {
                 this.elem.bind('mousewheel', function(event, delta) {
@@ -200,7 +258,9 @@
                 var resizeTimer;
                 $(window).bind('resize', function () {
                     clearTimeout(resizeTimer);
-                    resizeTimer = setTimeout(document.location.reload(true), 100);
+                    resizeTimer = setTimeout(function() {
+                        document.location.reload(false);
+                    }, 100);
                 });
             }
 
