@@ -1,15 +1,23 @@
-/**
+/*!
  * Monocle - A simple image zoom plugin for jQuery
  * Author: @felixtriller
+ *
+ * Version 1.1
  *
  * Copyright (c) 2012 TravelTrex GmbH
  *
  * Licensed under the LGPL License (LICENSE.txt).
  *
  * Thanks to the jQuery team for their awesome JavaScript library. 
- * Thanks to Brandon Aaron (http://brandonaaron.net) for his jQuery Mousewheel plugin.
+ * Thanks to Brandon Aaron (http://brandonaaron.net) for his jQuery mousewheel plugin.
  *
- * Version 1.0
+ * CHANGELOG
+ * Version 1.1 - 2012-10-30
+ * - now using the whole window for zooming
+ * - improved script behavior on window resize
+ *
+ * Version 1.0 - 2012-10-04
+ * - initial release
  *
  * TODO
  * - zoom relative to mouse position
@@ -63,17 +71,7 @@
             this.imgHeight  = this.elem.height();
             this.imgRatio   = this.imgHeight / this.imgWidth;
 
-            this.viewWidth  = this.viewport.width();
-            this.viewHeight = this.viewport.height();
-
-            // set current image
-            this.curWidth  = this.imgWidth;
-            this.curHeight = this.imgHeight;
-
-            // set zoom step size based on image size and zoom levels
-            this.zoomStep   = (this.imgWidth - this.viewWidth) / this.config.maxZoom;
-
-            // fit image to viewport
+            // set image
             this.reset();
 
             // GO GO GO!
@@ -90,7 +88,8 @@
                      })
                      .animate({
                         opacity: 1
-                     }, this.config.animationSpeed);
+                     }, this.config.animationSpeed)
+                     .parent().addClass('monocle-loaded');
 
 
             // REGISTER BINDINGS
@@ -256,10 +255,12 @@
             // reload page on resize (kind of responsive)
             if (this.config.responsive) {
                 var resizeTimer;
+
                 $(window).bind('resize', function () {
                     clearTimeout(resizeTimer);
                     resizeTimer = setTimeout(function() {
-                        document.location.reload(false);
+                        //document.location.reload(false);
+                        self.reset();
                     }, 100);
                 });
             }
@@ -268,10 +269,16 @@
         },
 
         /**
-         * Set image dimensions to Viewport size, reset zoom level,
-         * change Viewport height to fit aspect ratio of image
+         * Fit image dimensions to Viewport size, reset zoom level
          */
         reset: function() {
+            this.viewWidth  = $(window).width();
+            this.viewHeight = $(window).height();
+
+            this.viewport.height(this.viewHeight);
+            this.viewport.width(this.viewWidth);
+
+            // set current image size
             this.curWidth  = this.viewWidth;
             this.curHeight = this.viewWidth * this.imgRatio;
 
@@ -279,15 +286,11 @@
             if (this.curHeight > $(window).height()) {
                 this.curHeight  = $(window).height() - this.viewportY * 2;
                 this.curWidth   = this.curHeight / this.imgRatio;
-                this.viewWidth  = this.curWidth;
-                this.zoomStep   = (this.imgWidth - this.viewWidth) / this.config.maxZoom;
             }
 
-            this.zoomlevel  = 0;
+            this.zoomStep = (this.imgWidth - this.curWidth) / this.config.maxZoom;
 
-            this.viewHeight = this.curHeight;
-            this.viewport.height(this.curHeight);
-            this.viewport.width(this.curWidth);
+            this.zoomlevel  = 0;
 
             this.elem.stop(false, true).animate({
                 width: this.curWidth,
@@ -334,8 +337,8 @@
                     break;
             }
 
-            this.curWidth  = this.viewWidth + this.zoomStep * this.zoomlevel;
-            this.curHeight = this.viewWidth * this.imgRatio + this.zoomStep * this.zoomlevel * this.imgRatio;
+            this.curWidth  = this.curWidth - this.zoomStep * (directionInt);
+            this.curHeight = this.curHeight - this.zoomStep * (directionInt) * this.imgRatio;
 
             this.goTo(directionInt, directionInt, true);
         },
@@ -433,7 +436,5 @@
             });
         });
     };
-
-    //optional: window.Monocle = Monocle;
 
 })(jQuery, window , document);
