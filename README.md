@@ -47,6 +47,9 @@ The markup should look like this
 This is a early version of Monocle which needs some cleanup and refactoring.
 
 ## Changelog
+ * _2012.10.30 - 1.1_
+    * Monocle is now using the whole window while zooming
+    * Improved script behavior on window resize
  * _2012.10.05 - 1.0_
     * Initial release
 
